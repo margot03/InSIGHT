@@ -10,8 +10,8 @@ Vocn = 32.9 #37.7 # nominal open circuit voltage
 Imp = 7.61 #8.2 # array current at MPP
 Vmp = 26.3 #30.1 # array voltage at MPP
 Pmax_e = Vmp * Imp # experimental array max power output
-Kv = -0.32/100 * Vocn # voltage temperature coefficient
-Ki = -0.032/100 * Iscn # current temperature coefficient
+Kv = -0.123 #-0.32/100 * Vocn # voltage temperature coefficient
+Ki = 0.0032 #-0.032/100 * Iscn # current temperature coefficient
 
 Ns = 60. # number of series cells
 Gn = 1000. # nominal irradiance

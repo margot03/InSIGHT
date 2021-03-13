@@ -154,15 +154,13 @@ class PvModel:
             I0n = (Ipv - Vocn/Rp) / (math.exp(Vocn/Vt/a/Ns)-1)
             I0 = I0n
 
-            a = (Kv - Vocn/Tn) / (Ns * Vtn * (Ki/Ipvn - 3./Tn - Egap/(k*(Tn**2))))
+            a = (Kv - Vocn/Tn) / (Ns * Vtn * (Ki/Ipvn - 3./Tn - Egap/(k*Tn**2)))
 
-            Rp = Vmp * (Vmp + Imp*Rs) / (Vmp * Ipv - Vmp* I0 * math.exp((Vmp+Imp*Rs)/Vt/Ns/a)+Vmp*I0-Pmax_e)
+            Rp = Vmp * (Vmp + Imp*Rs) / (Vmp * Ipv - Vmp * I0 * math.exp((Vmp+Imp*Rs)/Vt/Ns/a)+Vmp*I0-Pmax_e)
             
             i = self.newton_raphson(v, Ipv, I0, Rs, Rp, Vt, Ns, a, err, i)
             
-            P = np.zeros_like(v)
-            for idx1 in range(len(v)):
-                P[idx1] = v[idx1] * i[idx1]
+            P = v * i
             P_idx = np.argmax(P)
             Pmax_m = P[P_idx]
 
