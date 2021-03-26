@@ -1,4 +1,3 @@
-import math
 import numpy as np
 import scipy as sp
 from scipy import constants
@@ -35,7 +34,7 @@ class PvModel:
         Isc_ = (Iscn + Ki * deltaT) * G / Gn
         Voc_ = Vocn + Kv * deltaT
         Ipv_ = (Rs + Rp) / Rp * Isc_
-        I0 = (Ipv_ - Voc_ / Rp) / (math.exp(Voc_ / Vt / a / Ns) - 1)
+        I0 = (Ipv_ - Voc_ / Rp) / (np.exp(Voc_ / Vt / a / Ns) - 1)
 
         return Ipvn, Ipv, Isc, I0
 
@@ -48,19 +47,19 @@ class PvModel:
             _v = v[idx]
             _g = (
                 Ipv
-                - I0 * (math.exp((_v + _i * Rs) / Vt / Ns / a) - 1)
+                - I0 * (np.exp((_v + _i * Rs) / Vt / Ns / a) - 1)
                 - (_v + _i * Rs) / Rp
                 - _i
             )
             while abs(_g) > err:
                 _g = (
                     Ipv
-                    - I0 * (math.exp((_v + _i * Rs) / Vt / Ns / a) - 1)
+                    - I0 * (np.exp((_v + _i * Rs) / Vt / Ns / a) - 1)
                     - (_v + _i * Rs) / Rp
                     - _i
                 )
                 _glin = (
-                    -I0 * Rs / Vt / Ns / a * math.exp((_v + _i * Rs) / Vt / Ns / a)
+                    -I0 * Rs / Vt / Ns / a * np.exp((_v + _i * Rs) / Vt / Ns / a)
                     - Rs / Rp
                     - 1
                 )
@@ -126,7 +125,7 @@ class PvModel:
                 * (Vmp + Imp * Rs)
                 / (
                     Vmp * Ipv
-                    - Vmp * I0 * math.exp((Vmp + Imp * Rs) / Vt / Ns / a)
+                    - Vmp * I0 * np.exp((Vmp + Imp * Rs) / Vt / Ns / a)
                     + Vmp * I0
                     - Pmax_e
                 )
