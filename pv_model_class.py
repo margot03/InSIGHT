@@ -25,13 +25,16 @@ class PvModel:
         self.k = constants.Boltzmann
 
     def calculate_currents(self, Rs, Rp, a, Iscn, Vocn, Ki, Kv, Vt, Ns, G, Gn, deltaT):
+        """Calculates and returns the different current values of interest. Takes
+        different PV module specifications and weather data as input.
+        """
         # current equations
         Ipvn = Iscn * (Rs + Rp) / Rp
         Ipv = (Ipvn + Ki * deltaT) * G / Gn
         Isc = (Iscn + Ki * deltaT) * G / Gn
 
         # new method:
-        Isc_ = (Iscn + Ki * deltaT) * G / Gn
+        Isc_ = Iscn + Ki * deltaT
         Voc_ = Vocn + Kv * deltaT
         Ipv_ = (Rs + Rp) / Rp * Isc_
         I0 = (Ipv_ - Voc_ / Rp) / (np.exp(Voc_ / Vt / a / Ns) - 1)
@@ -65,6 +68,7 @@ class PvModel:
                 )
                 _i = _i - _g / _glin
                 i[idx] = _i
+
         return i
 
     def find_resistors(self):
@@ -196,6 +200,7 @@ class PvModel:
         plt.xlabel(x_label)
         plt.ylabel(y_label)
         plt.title(title)
+        plt.axis((None, None, 0, None))
         plt.show()
 
 
