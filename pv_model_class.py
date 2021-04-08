@@ -71,6 +71,36 @@ class PvModel:
 
         return i
 
+    def find_irradiance(self, DNI, DHI, day, hour, lat, elev, beta):
+        """ Given data for a particular location, calculates the value
+        of the irradiance to be used in PV model calculations. This should be
+        done for every time increment.
+        """
+        # declination
+        dirac = -23.45 * np.cos(360/365 * (day + 10))
+
+        #HRA
+        hra = 15 * (hour - 12)
+
+        # angle to calculate azimuth
+        phi = (np.sin(dirac)*np.cos(lat) - np.cos(dirac)*np.sin(lat)*np.cos(hra))/np.cos(elev)
+        #azimuth
+        az = np.arccos(phi)
+
+        # calculate angle for direct beam
+        angle = (
+            np.sin(dirac)*np.sin(lat)*np.cos(beta)
+            - np.sin(dirac)*np.cos(lat)*np.sin(beta)*np.cos(az)
+            + np.cos(dirac)*np.cos(lat)*np.cos(beta)*np.cos(hra)
+            + np.cos(dirac)*np.sin(lat)*np.sin(beta)*np.cos(az)*np.cos(hra)
+            + np.cos(dirac)*np.sin(az)*np.sin(hra)*np.sin(beta)
+        )
+
+        B = DNI * angle
+        D = DHI * (180 - beta)/180
+        G = B + D
+        return G
+    
     def find_resistors(self):
         """Iteratively solve for the values of the series and parallel resistances
         (Rs, Rp) and the diode ideality constant (a). This should be done to initialize
