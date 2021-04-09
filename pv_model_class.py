@@ -70,37 +70,29 @@ class PvModel:
                 i[idx] = _i
 
         return i
-
-    def find_irradiance(self, DNI, DHI, day, hour, lat, elev, beta):
+    
+    def find_irradiance(self, DNI, DHI, GHI, rho, n, hour, lat, az_c, sigma):
         """ Given data for a particular location, calculates the value
         of the irradiance to be used in PV model calculations. This should be
         done for every time increment.
+        TEXTBOOK EQUATIONS.
         """
         # declination
-        dirac = -23.45 * np.cos(360/365 * (day + 10))
+        decl = 23.45 * np.sin(360/365 * (n - 81))
+        # hour angle
+        H = 15 * (12 - hour)
+        # solar altitude
+        beta = np.arcsin(np.cos(lat) * np.cos(decl) * np.cos(H) + np.sin(lat) * np.sin(decl))
+        # solar azimuth
+        az_s = np.arcsin(np.cos(decl) * np.sin(H) / np.cos(beta))
 
-        #HRA
-        hra = 15 * (hour - 12)
-
-        # angle to calculate azimuth
-        phi = (np.sin(dirac)*np.cos(lat) - np.cos(dirac)*np.sin(lat)*np.cos(hra))/np.cos(elev)
-        #azimuth
-        az = np.arccos(phi)
-
-        # calculate angle for direct beam
-        angle = (
-            np.sin(dirac)*np.sin(lat)*np.cos(beta)
-            - np.sin(dirac)*np.cos(lat)*np.sin(beta)*np.cos(az)
-            + np.cos(dirac)*np.cos(lat)*np.cos(beta)*np.cos(hra)
-            + np.cos(dirac)*np.sin(lat)*np.sin(beta)*np.cos(az)*np.cos(hra)
-            + np.cos(dirac)*np.sin(az)*np.sin(hra)*np.sin(beta)
-        )
-
-        B = DNI * angle
-        D = DHI * (180 - beta)/180
-        G = B + D
+        cos_theta = np.cos(beta) * np.cos(az_s - az_c) * np.sin(sigma) + np.sin(beta) * np.cos(sigma)
+        B = DNI * cos_theta
+        D = DHI * (1 + np.cos(sigma)) / 2
+        R = GHI * rho * (1 - np.cos(sigma)) / 2
+        G = B + D + R
         return G
-    
+
     def find_resistors(self):
         """Iteratively solve for the values of the series and parallel resistances
         (Rs, Rp) and the diode ideality constant (a). This should be done to initialize
