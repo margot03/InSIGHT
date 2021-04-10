@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 class PvModel:
-    def __init__(self, Iscn, Vocn, Imp, Vmp, Kv, Ki, Ns, Gn, G, Tn, T, Egap, err):
+    def __init__(self, Iscn, Vocn, Imp, Vmp, Kv, Ki, Ns, Gn, G, Tn, T, Egap, err, inverter, array_dim):
         # Initializes all standard values
         self.Iscn = Iscn
         self.Vocn = Vocn
@@ -20,6 +20,9 @@ class PvModel:
         self.T = T
         self.Egap = Egap
         self.err = err
+        self.inverter = inverter
+        # array with [number of strings, number in series (per string)]
+        self.array_dim = array_dim
 
         self.q = constants.e
         self.k = constants.Boltzmann
@@ -77,16 +80,41 @@ class PvModel:
         done for every time increment.
         TEXTBOOK EQUATIONS.
         """
+        
         # declination
-        decl = 23.45 * np.sin(360/365 * (n - 81))
+        decl = 23.45 * np.sin(360/365 * (n - 81)* np.pi/180)
         # hour angle
         H = 15 * (12 - hour)
+        
+        lat = lat * np.pi/180
+        H = H * np.pi/180
+        decl = decl * np.pi/180
+        sigma = sigma * np.pi/180
+        az_c = az_c * np.pi/180
+        
         # solar altitude
-        beta = np.arcsin(np.cos(lat) * np.cos(decl) * np.cos(H) + np.sin(lat) * np.sin(decl))
+        beta = np.arcsin(
+            np.cos(lat) 
+            * np.cos(decl) 
+            * np.cos(H) 
+            + np.sin(lat) 
+            * np.sin(decl)
+        )
         # solar azimuth
-        az_s = np.arcsin(np.cos(decl) * np.sin(H) / np.cos(beta))
-
-        cos_theta = np.cos(beta) * np.cos(az_s - az_c) * np.sin(sigma) + np.sin(beta) * np.cos(sigma)
+        az_s = np.arcsin(
+            np.cos(decl) 
+            * np.sin(H) 
+            / np.cos(beta)
+        )
+        
+        
+        cos_theta = (
+            np.cos(beta) 
+            * np.cos(az_s - az_c) 
+            * np.sin(sigma) 
+            + np.sin(beta) 
+            * np.cos(sigma)
+        )
         B = DNI * cos_theta
         D = DHI * (1 + np.cos(sigma)) / 2
         R = GHI * rho * (1 - np.cos(sigma)) / 2
@@ -95,8 +123,8 @@ class PvModel:
 
     def find_resistors(self):
         """Iteratively solve for the values of the series and parallel resistances
-        (Rs, Rp) and the diode ideality constant (a). This should be done to initialize
-        a model.
+        (Rs, Rp) and the diode ideality constant (a). This should be done to
+        initialize a model.
         """
 
         # set constants, etc
@@ -206,9 +234,15 @@ class PvModel:
         # solve for the current for all voltages
         i = self.newton_raphson(v, Ipv, I0, Rs, Rp, Vt, Ns, a, err, i)
 
+        # account for array dimensions
+        i *= self.array_dim[0]
+        v *= self.array_dim[1]
         # calculate power
         P = v * i
-
+        
+        # account for inverter efficiency
+        P *= self.inverter
+        
         return v, i, P
 
     def _plot(self, x, y, x_label, y_label, title):
