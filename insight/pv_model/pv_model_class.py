@@ -262,7 +262,7 @@ class PvModel:
 
 def main():
     # assuming data is held in "pv_data.py"
-    import pv_data as pv
+    import insight.pv_model.pv_data as pv
 
     pv_mod = PvModel(
         pv.Iscn,
