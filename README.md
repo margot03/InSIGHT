@@ -1,6 +1,8 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-# Real_modeling
+## Infrastructure and long-duration Storage Integration using Green Hydrogen Tool (InSIGHT)
+
+# Solar Photovoltaic (PV) System Modeling
 Currently modeling photovoltaic (PV) cells in python. Eventually we will move on to model energy storage methods in combination with PV arrays to simulate a cost-minimizing consumer with a behind-the-meter PV array and battery. Our future goal is to model other forms of energy storage as well, including green hydrogen!
 
 # Process
