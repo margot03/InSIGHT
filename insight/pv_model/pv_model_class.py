@@ -258,30 +258,3 @@ class PvModel:
         plt.title(title)
         plt.axis((None, None, 0, None))
         plt.show()
-
-
-def main():
-    # assuming data is held in "pv_data.py"
-    import insight.pv_model.pv_data as pv
-
-    pv_mod = PvModel(
-        pv.Iscn,
-        pv.Vocn,
-        pv.Imp,
-        pv.Vmp,
-        pv.Kv,
-        pv.Ki,
-        pv.Ns,
-        pv.Gn,
-        pv.Tn,
-        pv.Egap,
-        pv.err,
-    )
-    Rs, Rp, a = pv_mod.find_resistors()
-    v, i, P = pv_mod.calculate_power(Rs, Rp, a)
-    Pmax = P[np.argmax(P)]
-    print(Pmax)
-
-
-if __name__ == "__main__":
-    main()
