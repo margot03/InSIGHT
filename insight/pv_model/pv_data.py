@@ -1,6 +1,4 @@
 ## Constants
-q = 1.602 * 10 ** -19 # charge on electron
-k = 1.3806503 * 10 ** -23 # boltzmann constant
 Egap = 1.8 * 10 ** -19 # Bandgap of silicon (silicio cristalino)
 
 ## Data

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 class PvModel:
-    def __init__(self, Iscn, Vocn, Imp, Vmp, Kv, Ki, Ns, Gn, G, Tn, T, Egap, err, inverter, array_dim):
+    def __init__(self, Iscn, Vocn, Imp, Vmp, Kv, Ki, Ns, Gn, G, Tn, T, Egap, err=0.0001, inverter_eff=0.95, array_dim=[1,1], increment=0.1):
         # Initializes all standard values
         self.Iscn = Iscn
         self.Vocn = Vocn
@@ -20,23 +20,45 @@ class PvModel:
         self.T = T
         self.Egap = Egap
         self.err = err
-        self.inverter = inverter
+        self.inverter_eff = inverter_eff
         # array with [number of strings, number in series (per string)]
         self.array_dim = array_dim
-
+        self.increment = increment
         self.q = constants.e
         self.k = constants.Boltzmann
 
     def calculate_currents(self, Rs, Rp, a, Iscn, Vocn, Ki, Kv, Vt, Ns, G, Gn, deltaT):
         """Calculates and returns the different current values of interest. Takes
         different PV module specifications and weather data as input.
+        
+        :param float Rs: The equivalent series resistance of the PV module.
+        :param float Rp: The equivalent parallel resistance of the PV module.
+        :param float a: The diode ideality constant.
+        :param float Iscn: The nominal short circuit current of the PV module.
+        :param float Vocn: The nominal open circuit voltage of the PV module.
+        :param float Ki: The rated current temperature coefficient.
+        :param flaot Kv: The rated voltage temperature coefficient.
+        :param float Vt: The thermal voltage of the PV module for Ns cells in series.
+        :param int Ns: The number of PV cells in series for the PV module.
+        :param float G: The irradiance of the environment surrounding the PV module.
+        :param float Gn: The nominal irradiance of the environment surrounding the PV module,
+            at 25 C degrees.
+        :param float deltaT: The difference between the nominal operating temperature and the
+            actual temeprature of the environment surrounding the PV module.
+        :return: Lists for the nominal and realistic output currents (Ipvn and Ipv, respectively),
+            the short circuit current impacted by environmental factors (Isc), and the 
+            resulting saturation current (I0).
         """
+        # so there seem to be two different ways of calculating Ipv and Isc, which one should we use? 
+        # we seem to use the first method everywhere else but then the new method only to calculate I0,
+            # does that make these values inconsistent with each other?
+        
         # current equations
         Ipvn = Iscn * (Rs + Rp) / Rp
         Ipv = (Ipvn + Ki * deltaT) * G / Gn
         Isc = (Iscn + Ki * deltaT) * G / Gn
 
-        # new method:
+        # Caclulate the saturation current, I0, without including the irradiance values
         Isc_ = Iscn + Ki * deltaT
         Voc_ = Vocn + Kv * deltaT
         Ipv_ = (Rs + Rp) / Rp * Isc_
@@ -47,6 +69,8 @@ class PvModel:
     def newton_raphson(self, v, Ipv, I0, Rs, Rp, Vt, Ns, a, err, i):
         """Given values needed to solve for the current using the Newton-Raphson method.
         Returns the current array.
+        
+        :param array v: The 
         """
         _i = i[0]
         for idx in range(len(v)):
@@ -130,6 +154,7 @@ class PvModel:
         # set constants, etc
         q = self.q
         k = self.k
+        increment = self.increment
         Vocn = self.Vocn
         Iscn = self.Iscn
         Ns = self.Ns
@@ -158,7 +183,7 @@ class PvModel:
 
         # initialize voltage, current, etc
         itr = 0
-        v = np.arange(0.1, (Vocn + Kv * deltaT), 0.1)
+        v = np.arange(0, (Vocn + Kv * deltaT), increment)
         i = np.zeros_like(v)
         p_dif = Pmax_e
 
@@ -204,6 +229,7 @@ class PvModel:
         # set constants, etc
         q = self.q
         k = self.k
+        increment = self.increment
         Vocn = self.Vocn
         Iscn = self.Iscn
         Ns = self.Ns
@@ -228,7 +254,7 @@ class PvModel:
             Rs, Rp, a, Iscn, Vocn, Ki, Kv, Vt, Ns, G, Gn, deltaT
         )
 
-        v = np.arange(0.1, (Vocn + Kv * deltaT), 0.1)
+        v = np.arange(0.1, (Vocn + Kv * deltaT), increment)
         i = np.ones_like(v) * Iscn
 
         # solve for the current for all voltages
@@ -241,7 +267,7 @@ class PvModel:
         P = v * i
         
         # account for inverter efficiency
-        P *= self.inverter
+        P *= self.inverter_eff
         
         return v, i, P
 
@@ -251,10 +277,9 @@ class PvModel:
         plt.show() so plot shows up inline.
         """
 
-        fig = plt.figure(1)
         plt.plot(x, y)
         plt.xlabel(x_label)
         plt.ylabel(y_label)
         plt.title(title)
-        plt.axis((None, None, 0, None))
+        plt.axis((0, None, 0, None))
         plt.show()
