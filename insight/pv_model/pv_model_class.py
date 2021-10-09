@@ -73,24 +73,17 @@ class PvModel:
             at 25 C degrees.
         :param float deltaT: The difference between the nominal operating temperature and the
             actual temeprature of the environment surrounding the PV module.
-        :return: Lists for the nominal and realistic output currents (Ipvn and Ipv, respectively),
-            the short circuit current impacted by environmental factors (Isc), and the 
+        :return: Lists for the nominal and realistic output currents (Ipvn and Ipv, respectively), and the 
             resulting saturation current (I0).
         """
         # current equations
         Ipvn = Iscn * (Rs + Rp) / Rp
         Ipv = (Ipvn + Ki * deltaT) * G / Gn
-        Isc = (Iscn + Ki * deltaT) * G / Gn
-
-        # Caclulate the saturation current, I0, without including the irradiance values
-        # When G/Gn is included in the Isc used for I0 it causes the current values in
-        # the irradiance demo file to go crazy!!
-        Isc_noG = (Iscn + Ki * deltaT)
         Voc = Vocn + Kv * deltaT
-        Ipv_ = (Rs + Rp) / Rp * Isc_noG # change to Isc to test with G/Gn
-        I0 = (Ipv_ - Voc / Rp) / (np.exp(Voc / Vt / a / Ns) - 1)
-
-        return Ipvn, Ipv, Isc, I0
+        I0 = (Iscn + Ki * deltaT) / (np.exp(Voc / a / Vt / Ns) - 1)
+        
+        
+        return Ipvn, Ipv, I0
 
     def newton_raphson(self, v, Ipv, I0, Rs, Rp, Vt, Ns, a, err, i):
         """Given values needed to solve for the current using the Newton-Raphson method.
@@ -113,7 +106,6 @@ class PvModel:
             the Newton-Raphson method.
         :return: The updated array of current values.
         """
-        
         _i = i[0]
         for idx in range(len(v)):
             _v = v[idx]
@@ -123,6 +115,7 @@ class PvModel:
                 - (_v + _i * Rs) / Rp
                 - _i
             )
+            
             while abs(_g) > err:
                 _g = (
                     Ipv
@@ -241,6 +234,8 @@ class PvModel:
         deltaT = T - Tn
         
         # set initial values of Rs, Rp, and a
+        # technique outlined in Villalva paper
+        # but detailed in Villalva online repo
         Rs_max = (Vocn - Vmp) / Imp
         Rp_min = Vmp / (Iscn - Imp) - Rs_max
         Rp = Rp_min
@@ -257,7 +252,7 @@ class PvModel:
         while p_dif >= err and itr < len(v):
             Rs = Rs_vals[itr]
 
-            Ipvn, Ipv, Isc, I0 = self.calculate_currents(
+            Ipvn, Ipv, I0 = self.calculate_currents(
                 Rs, Rp, a, Iscn, Vocn, Ki, Kv, Vt, Ns, G, Gn, deltaT
             )
 
@@ -322,12 +317,12 @@ class PvModel:
         deltaT = T - Tn
 
         # current equations
-        Ipvn, Ipv, Isc, I0 = self.calculate_currents(
+        Ipvn, Ipv, I0 = self.calculate_currents(
             Rs, Rp, a, Iscn, Vocn, Ki, Kv, Vt, Ns, G, Gn, deltaT
         )
 
-        v = np.arange(0, (Vocn + Kv * deltaT), increment)
-        i = np.ones_like(v) * Iscn
+        v = np.arange(0, Vocn, increment)
+        i = np.zeros_like(v)
 
         # solve for the current for all voltages
         i = self.newton_raphson(v, Ipv, I0, Rs, Rp, Vt, Ns, a, err, i)
