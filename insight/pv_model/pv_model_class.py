@@ -322,7 +322,9 @@ class PvModel:
         )
 
         v = np.arange(0, Vocn, increment)
-        i = np.zeros_like(v)
+        # initialize current to be around the short circuit current
+        # for faster convergence in Newton Raphson
+        i = np.ones_like(v) * Iscn
 
         # solve for the current for all voltages
         i = self.newton_raphson(v, Ipv, I0, Rs, Rp, Vt, Ns, a, err, i)
